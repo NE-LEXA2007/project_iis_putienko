@@ -1,0 +1,20 @@
+{
+  "chunks": 118,
+  "by_source": {
+    "cash_conditions.pdf": 21,
+    "bank_conditions.pdf": 92,
+    "cash_tariff.pdf": 5
+  },
+  "by_category": {
+    "rates": 20,
+    "general": 42,
+    "penalties": 14,
+    "early_repayment": 26,
+    "terms": 16
+  },
+  "by_product": {
+    "cash": 44,
+    "other": 74
+  },
+  "metadata_complete": true
+}

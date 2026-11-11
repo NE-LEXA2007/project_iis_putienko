@@ -50,11 +50,17 @@ def read_txt(path: Path) -> list[tuple[int, str]]:
 
 
 def read_pdf(path: Path) -> list[tuple[int, str]]:
-    """Возвращает [(номер страницы, текст)] — постранично, чтобы метаданное page было честным."""
+    """Страница сохраняет исходный номер PDF. Удаляем только известный колонтитул."""
     from pypdf import PdfReader
-
     reader = PdfReader(str(path))
-    return [(i + 1, page.extract_text() or "") for i, page in enumerate(reader.pages)]
+    result = []
+    for i, page in enumerate(reader.pages):
+        text = page.extract_text() or ""
+        # pypdf склеивает «1 из 3» и строку таблицы «1.» в «1 из 31.».
+        # Поэтому номер удаляется по известному числу страниц, без жадного \d+.
+        text = re.sub(r"^\s*" + str(i + 1) + r"\s+из\s+" + str(len(reader.pages)), "", text)
+        result.append((i + 1, text))
+    return result
 
 
 READERS = {".txt": read_txt, ".md": read_txt, ".pdf": read_pdf}
@@ -62,42 +68,87 @@ READERS = {".txt": read_txt, ".md": read_txt, ".pdf": read_pdf}
 
 # --- Ваша часть (П2) ---
 
+import re
+import unicodedata
+
+
 def clean_text(text: str) -> str:
-    r"""Очистить сырой текст перед нарезкой.
+    """Очистка без потери номеров пунктов, единиц измерения и границ абзацев.
 
-    Что обычно нужно убрать: разрывы слов по переносу строки, повторяющиеся
-    колонтитулы, номера страниц отдельной строкой, цепочки пробелов и пустых строк.
-
-    Подсказка: начните с re.sub(r"-\n", "", text) и r"\s+" -> " ", посмотрите
-    на результат глазами и добавьте правила под свои исходные данные.
+    Колонтитулы удаляются только по явным маркерам. Нельзя безусловно удалять
+    любую повторяющуюся строку: ею может оказаться значимый пункт договора.
     """
-    raise NotImplementedError("П2: реализуйте очистку текста")
+    text = unicodedata.normalize("NFKC", text).replace("\u00ad", "")
+    text = text.replace("\r\n", "\n").replace("\r", "\n").replace("\xa0", " ")
+    text = re.sub(r"(?<=[а-яёa-z])-\n\s*(?=[а-яёa-z])", "", text)
+    text = re.sub(r"-\n\s*(?=[А-ЯЁA-Z])", "-", text)
+    text = re.sub(r"(?:[TТ]-КН-\d+\.\d+-\d{6}|ФЗ-КН-\d{6})", "", text)
+    paragraphs, current = [], []
+    for line in text.splitlines():
+        line = re.sub(r"[ \t]+", " ", line).strip()
+        if re.fullmatch(r"(?:стр(?:аница)?\.?\s*)\d+(?:\s*(?:из|/)\s*\d+)?", line, re.I):
+            continue
+        if re.fullmatch(r"(?:Т-Банк|АО «ТБанк»|www\.tbank\.ru)", line, re.I):
+            continue
+        if not line:
+            if current:
+                paragraphs.append(" ".join(current))
+                current = []
+            continue
+        if re.match(r"(?:\d+(?:\.\d+)*[.)]\s|Раздел\s+\d|Глава\s+\d|#{1,6}\s)", line, re.I) and current:
+            paragraphs.append(" ".join(current))
+            current = []
+        current.append(line)
+    if current:
+        paragraphs.append(" ".join(current))
+    return "\n\n".join(paragraphs)
 
 
 def chunk_text(text: str, size: int = config.CHUNK_SIZE,
                overlap: int = config.CHUNK_OVERLAP) -> list[str]:
-    """Нарезать текст на чанки размером size с перекрытием overlap.
+    """Окна с шагом size-overlap; по возможности граница между пунктами.
 
-    Перекрытие нужно, чтобы мысль, попавшая на границу нарезки, не потерялась:
-    её хвост окажется в начале следующего чанка.
-
-    Следите за двумя вещами: шаг сдвига равен size - overlap (не size), и
-    overlap обязан быть меньше size, иначе цикл не сойдётся.
+    Если размер пункта больше окна, режем его по словам. Реальное перекрытие
+    может быть короче заданного на длину обрезанного слова.
     """
-    raise NotImplementedError("П2: реализуйте нарезку с перекрытием")
+    if size < 32 or overlap < 0 or overlap >= size:
+        raise ValueError("Нужно size >= 32 и 0 <= overlap < size")
+    if not text.strip():
+        return []
+    result, start = [], 0
+    while start < len(text):
+        end = min(start + size, len(text))
+        if end < len(text):
+            paragraph = text.rfind("\n\n", start + size // 2, end)
+            word = text.rfind(" ", start + size // 2, end)
+            boundary = paragraph if paragraph != -1 else word
+            if boundary > start + overlap:
+                end = boundary
+        chunk = text[start:end].strip()
+        if chunk:
+            result.append(chunk)
+        if end == len(text):
+            break
+        next_start = end - overlap
+        # Не начинать посреди слова: такой хвост мало полезен эмбеддингу.
+        if next_start > start and next_start > 0 and not text[next_start - 1].isspace():
+            space = re.search(r"\s", text[next_start:end])
+            if space:
+                next_start += space.end()
+        start = max(start + 1, next_start)
+    return result
 
 
 def detect_category(text: str, source: str) -> str:
-    """Определить рубрику чанка.
-
-    Словарь рубрик — ваш проектный выбор, он зависит от домена. Для налогового
-    консультанта это может быть "law" | "faq" | "forms"; для ассистента абитуриента —
-    "admission" | "dormitory" | "schedule".
-
-    Достаточно правил по имени файла и ключевым словам — LLM здесь не нужна.
-    Пустых категорий быть не должно: заведите рубрику по умолчанию.
-    """
-    raise NotImplementedError("П2: реализуйте рубрикацию")
+    """Второй уровень: продукт определяется именем source, рубрика — пунктом."""
+    combined = (source + " " + text).lower().replace("ё", "е")
+    rules = [
+        ("early_repayment", r"досроч|early_repayment"),
+        ("penalties", r"просроч|неустойк|штраф|пен[яию]|penalties"),
+        ("rates", r"процент|ставк|полная стоимость|пск|rates|тариф"),
+        ("terms", r"срок|дата платеж|платежн|платежей|terms"),
+    ]
+    return next((name for name, pattern in rules if re.search(pattern, combined)), "general")
 
 
 # --- Сборка индекса: готова ---
@@ -109,40 +160,57 @@ def ingest() -> int:
     Иначе после смены CHUNK_SIZE в коллекции остались бы чанки предыдущей
     нарезки, и hit-rate@5 замерялся бы по смеси двух — молча, без ошибки.
     """
+    from scripts.check_sources import validate_sources
+    errors = validate_sources()
+    if errors:
+        raise SystemExit("Корпус не готов:\n" + "\n".join(errors))
+    if not Path(config.EMBEDDING_MODEL).is_dir():
+        raise SystemExit("Нет модели эмбеддингов. Выполните python scripts/fetch_models.py embedding")
     collection = config.reset_collection()
     total = 0
+    import json
+    manifest = json.loads((config.BASE_DIR / "sources.json").read_text(encoding="utf-8"))
+    ids, documents, metadatas = [], [], []
+    seen = set()
 
-    # README.md отсеивается намеренно: это шаблонная заглушка каталога,
-    # а не документ предметной области. Без отсева она попадает в индекс
-    # и выдаётся поиском как знание.
-    files = [p for p in config.RAW_DIR.rglob("*")
-             if p.suffix.lower() in READERS and p.name != "README.md"]
-    if not files:
-        raise SystemExit(f"В {config.RAW_DIR} нет файлов .txt/.md/.pdf — положите исходные данные (П2).")
+    def flush():
+        if ids:
+            collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            ids.clear(); documents.clear(); metadatas.clear()
 
-    for path in files:
+    for source in manifest:
+        path = config.RAW_DIR / source["file"]
+        ranges = source.get("index_pages", [])
         for page, raw in READERS[path.suffix.lower()](path):
+            if ranges and not any(start <= page <= end for start, end in ranges):
+                continue
             cleaned = clean_text(raw)
             if not cleaned:
                 continue
-
-            for chunk in chunk_text(cleaned):
-                # id детерминированный: одинаковый текст даёт один и тот же чанк,
-                # поэтому дубли не возникают даже внутри одного прогона
-                chunk_id = hashlib.sha1(
-                    f"{path.name}:{page}:{chunk}".encode("utf-8")
-                ).hexdigest()
-
-                collection.upsert(
-                    ids=[chunk_id],
-                    documents=[chunk],
-                    metadatas=[{
-                        "source": path.name,
-                        "page": page,
-                        "category": detect_category(chunk, path.name),
-                    }],
-                )
+            part = "общие положения"
+            if path.name == "bank_conditions.pdf" and page >= 40:
+                part = "общие условия кредитования, редакция 31"
+            # Специальные условия недвижимости, кредитной линии и образования
+            # храним в индексе с другим продуктом; оркестратор их не выбирает.
+            product = "other" if path.name == "bank_conditions.pdf" and page >= 45 else "cash"
+            for body in chunk_text(cleaned):
+                chunk_product = product
+                if path.name == "bank_conditions.pdf" and re.search(
+                        r"образовательн|недвижимост|автомобил|предмет\w* залог|партнерск", body, re.I):
+                    chunk_product = "other"
+                chunk = f"Корпус: кредит наличными. {source['title']}. {part}.\n{body}"
+                chunk_id = hashlib.sha1(f"{path.name}:{page}:{body}".encode()).hexdigest()
+                if chunk_id in seen:
+                    continue
+                seen.add(chunk_id)
+                ids.append(chunk_id); documents.append(chunk)
+                metadatas.append({"source": path.name, "page": page,
+                                  "category": detect_category(body, path.name), "product": chunk_product})
                 total += 1
+                if len(ids) >= 8:
+                    flush()
+        print(f"Обработан {path.name}; чанков всего: {total}", flush=True)
+    flush()
 
     return total
 
@@ -163,7 +231,8 @@ def evaluate_retrieval(k: int = config.TOP_K) -> float:
     import json
 
     dataset_path = Path(__file__).parent / "gold_dataset.json"
-    cases = [c for c in json.loads(dataset_path.read_text(encoding="utf-8"))
+    from dataset import load_cases
+    cases = [c for c in load_cases(dataset_path)
              if c.get("expected_sources")]
 
     if not cases:
