@@ -1,0 +1,32 @@
+[
+  {
+    "practice": 1,
+    "file": "Путиенко-П1.bundle",
+    "commit": "c00cc52069baebf2f2c04adfb5d86ad7aaea8a73",
+    "sha256": "267523bef6c2884a6ca9fcc1a5d33692392313ecac4c038457e4f4c271835ca2"
+  },
+  {
+    "practice": 2,
+    "file": "Путиенко-П2.bundle",
+    "commit": "47607d2bb7b6dc967d873864155fb409132cf7e7",
+    "sha256": "6a4b696051616478ca2a060069b351d469a410edd47821f7c6c09dbe4d38d131"
+  },
+  {
+    "practice": 3,
+    "file": "Путиенко-П3.bundle",
+    "commit": "5d9240e9a88abb57460ed863ad8f4ffd49fe2ec8",
+    "sha256": "4dcfd0010095f7828f12018840f99d4f7224eb824a8d06b27e0c13749960b21b"
+  },
+  {
+    "practice": 4,
+    "file": "Путиенко-П4.bundle",
+    "commit": "76a245640e541e36d3f9a1e1ad2f36638708e943",
+    "sha256": "1c890fcc677df8ce7844af24c00a970bd463c4885aa0dfbf1464296414f27fcb"
+  },
+  {
+    "practice": 5,
+    "file": "Путиенко-П5.bundle",
+    "commit": "ae16ddc667f4473110535355b54cd0bf08f84182",
+    "sha256": "7a7d03ae2286bc0ddea68799acc9965a841ea8066ef094c97616b35943da7f3c"
+  }
+]
