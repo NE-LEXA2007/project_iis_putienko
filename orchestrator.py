@@ -87,7 +87,7 @@ class Orchestrator:
         if re.search(r"ипотек|автокредит|скоринг|одобрят|сбер|втб|альфа.?банк", text, re.I):
             return NO_ANSWER + " Другие банки, ипотека и одобрение вне проекта."
 
-        previous_product = self._products.get(session_id)
+        previous_product = self._products.get(session_id) or memory.get_product(session_id)
         product = detect_product(text)
         if product in {"card", "both"}:
             return NO_ANSWER + " Кредитные карты вне выбранного продукта."
@@ -110,6 +110,7 @@ class Orchestrator:
             history = []
             memory.clear(session_id)
         self._products[session_id] = product
+        memory.set_product(session_id, product)
         previous_role = self._state.get(session_id, self.INITIAL_ROLE)
         role = self.route(session_id, self.detect_intent(text))
         role_config = self.ROLES[role]
