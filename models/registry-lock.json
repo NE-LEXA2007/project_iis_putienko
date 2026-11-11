@@ -1,0 +1,16 @@
+[
+  {
+    "name": "embedding",
+    "repository": "ai/qwen3-embedding",
+    "manifest": "sha256:89bac03ef8d8c27e8133efef3048533700e48d78235a929934cd8f016bc39bdf",
+    "directory": ".models/qwen3-embedding",
+    "upstream": "Qwen/Qwen3-Embedding-0.6B"
+  },
+  {
+    "name": "generation",
+    "repository": "ai/qwen3",
+    "manifest": "sha256:8cd2927dc3a33531aa57f2479e2dcfb16e3bf53e31de561a612fcbc3cf6a6893",
+    "directory": ".models/qwen3-generation-4b",
+    "upstream": "unsloth/Qwen3-4B-Instruct-2507-GGUF"
+  }
+]

@@ -22,3 +22,5 @@ requests==2.32.3
 # Каналы доставки
 streamlit==1.38.0
 vkbottle==4.5.2
+
+zstandard==0.23.0

@@ -1,0 +1,60 @@
+[
+  {
+    "file": "bank_conditions.pdf",
+    "product": "cash",
+    "title": "Условия комплексного банковского обслуживания физических лиц",
+    "url": "https://cdn.tbank.ru/static/documents/627ee150-0276-4a81-9d0c-8be1e265ae87.pdf",
+    "page_url": "https://www.tbank.ru/loans/cash-loan/",
+    "edition": "УКБО, редакция 63; общие условия кредитования, редакция 31",
+    "pages": 101,
+    "sha256": "2187852e895312a802ab8cd4477db3f8573f3837f4918d2fa587a694cff5acd6",
+    "verified": true,
+    "obtained": "публичные PDF переданы пользователем в чат",
+    "checked_on": "2026-11-11",
+    "index_pages": [
+      [
+        40,
+        49
+      ]
+    ],
+    "selection_note": "В поиск включён полный раздел «Общие условия кредитования», страницы 40–49. Исходный PDF из 101 страницы сохранён целиком."
+  },
+  {
+    "file": "cash_tariff.pdf",
+    "product": "cash",
+    "title": "Тариф по кредиту наличными",
+    "url": "https://cdn.tbank.ru/static/documents/loans-cashloan-tariff.pdf",
+    "page_url": "https://www.tbank.ru/loans/cash-loan/",
+    "edition": "Тарифный план КН 5.0, код T-КН-5.0-261008",
+    "pages": 1,
+    "sha256": "d2a9e07d8df67dfb2cd4d9aa1b2c4a37feee19f26ee4fead4c7a9d64079bd498",
+    "verified": true,
+    "obtained": "публичные PDF переданы пользователем в чат",
+    "checked_on": "2026-11-11",
+    "index_pages": [
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "file": "cash_conditions.pdf",
+    "product": "cash",
+    "title": "Общие условия договора потребительского кредита для целей ФЗ №353",
+    "url": "https://cdn.tbank.ru/static/documents/docs-consumer-cash-loan.pdf",
+    "page_url": "https://www.tbank.ru/loans/cash-loan/",
+    "edition": "Код ФЗ-КН-261008",
+    "pages": 3,
+    "sha256": "2dc56eb1391a6fa7ecf61c35e937f612898eff0246f570193cbc9a9ede1ff0f9",
+    "verified": true,
+    "obtained": "публичные PDF переданы пользователем в чат",
+    "checked_on": "2026-11-11",
+    "index_pages": [
+      [
+        1,
+        3
+      ]
+    ]
+  }
+]

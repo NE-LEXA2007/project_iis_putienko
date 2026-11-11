@@ -14,3 +14,15 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# Локальные модели, результаты прогонов и сдача
+.models/
+.cache/
+artifacts/
+*.bundle
+*.log
+data/finops_*.json
+reports/runs/
+
+# Локальный исполняемый файл Ollama
+.tools/
